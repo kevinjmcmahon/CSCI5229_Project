@@ -1,0 +1,26 @@
+Kevin McMahon - Project
+CSCI5229 Fall 2025
+
+How to run: make; ./final;
+
+Main Key bindings
+ *  k          Toggle lighting modes (warm-up, game, de-bugging)
+ *  v          Change display mode (Orthogonal, Perspective, First Person)
+ *  arrows     Change view angle (orbital) or look direction (FP)
+ *  w/d/a/s    Move forward/back/left/right (in FP mode)
+ -- Standard key bindings 
+ *  +/-        zoom-in/zoom-out
+ *  mouse      Look around
+ *  ESC        Exit
+ -- Mainly for lighting de-bugging process as obviously still working
+ *  l          Toggles lighting on/off
+ *  m          Toggles light movement
+ *  z/Z        Decrease/increase ambient light
+ *  x/X        Decrease/increase diffuse light
+ *  c/C        Decrease/increase specular light
+
+What remains to be done:
+
+First thing that remain to be added is nets to the hoops. I have been putting nets on the hoops off since I have been lazy about extending the BMP Loader to handle alpha values since I need the net to be transparent in spots. I feel better about this after seeing the seaweed implementation of this in class yesterday. I want to add tunnels to "locker rooms" at the court level with a texture of the home team waiting to come out. With this, in the warm-up mode, I want to have fog in the tunnels as if the team is about to come out. I need additionally polish off the scene as a whole with more textures (floors around the court, laptops at scorer's table, wall's in front of the bleachers). Last, I would like a center-hung scoreboard containing video screen / scores... would be cool to flip through a play on video board as if its a video playing.
+
+I know adding in an animation of a shot being taken isn't too hard to implement so since I will be loading in the net, I want to animate the motion of a "swish" when the ball goes through the hoop how we saw the motion of the seaweed... differnt function obviously though that is the idea. This touch would be the "graduate project" touch to the project as I will not only be drawing just a scene but realistic action, leaving a nice complete package. 
