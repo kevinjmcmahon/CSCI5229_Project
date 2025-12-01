@@ -55,7 +55,7 @@ const char* viewText[] = {"Orthogonal", "Perspective", "First Person"};
 int sceneMode = 0; // 0=Basketball Court, 1=Plane only 
 
 // --- Standard Camera State (for modes 0 & 1) ---
-int th = 0;           // Azimuth of view angle
+int th = 180;           // Azimuth of view angle
 int ph = 30;          // Elevation of view angle
 double dim = 15.0;    // Zoom level for orbital views (calibrated to fit full court)
 
@@ -110,6 +110,7 @@ unsigned int texSportsFans = 0;
 unsigned int texGatoradeLogo = 0;
 unsigned int texCoolerLid = 0;
 unsigned int texChairCushion = 0;
+unsigned int texBasketballNet = 0;
 
 // --- Material presets ---
 // .. cleaning up codes / explpicitly defining len of arrays to avoid previous issues
@@ -132,12 +133,9 @@ int scoreHome = 0;
 int scoreAway = 0;
 
 // Scorebaord - video board textures 
-#define NUM_VIDEO_FRAMES 4
+#define NUM_VIDEO_FRAMES 6
 unsigned int texVideoFrames[NUM_VIDEO_FRAMES];
 int currentVideoFrame = 0;
-double videoTime = 0.0;
-
-
 
 //  Cosine and Sine in degrees
 #define Cos(x) (cos((x)*3.14159265/180))
@@ -146,6 +144,7 @@ void reshape(int width, int height);
 
 // Fcn prototypes for loading textures
 unsigned int LoadTexBMP(const char* file);
+unsigned int LoadTexBMP32(const char* file);
 
 // Set projection mode - introduced in hw4
 void Project()
@@ -1791,6 +1790,45 @@ static void drawFarSidelineSecondRowRiser(double courtLenHalfX, double courtWidH
 }
 
 
+// Drawing net for basketball hoop (upside down trucated cone w/ texture)
+static void drawBasketballHoopNet(double baseRadius, double topRadius, double height, int numSlices)
+{
+   if(numSlices<3) numSlices=3;
+
+   double angleStepDeg = 360.0 / numSlices;
+
+   glBegin(GL_QUAD_STRIP);
+   for(double angleDeg = 0.0; angleDeg <= 360.1; angleDeg += angleStepDeg)
+   {
+      double cosAngle = Cos(angleDeg);
+      double sinAngle = Sin(angleDeg);
+
+      // Normal for the sloped side
+      double normalX = cosAngle * height;
+      double normalY = (baseRadius - topRadius);
+      double normalZ = sinAngle * height;
+
+      double normalLen = sqrt(normalX*normalX + normalY*normalY + normalZ*normalZ);
+      if(normalLen==0.0) normalLen=1.0;
+      normalX /= normalLen;
+      normalY /= normalLen;
+      normalZ /= normalLen;
+
+      glNormal3d(normalX, normalY, normalZ);
+
+      // Texture coords 
+      // s wraps around 0 to 1, representing 0 to 360 degs
+      float s = (float)(angleDeg / 360.0);
+      float tBottom = 1.0f;
+      float tTop = 0.0f;
+
+      // Bottom ring 
+      glTexCoord2f(s, tBottom); glVertex3d(baseRadius*cosAngle, 0.0, baseRadius*sinAngle);
+      // Top ring
+      glTexCoord2f(s, tTop); glVertex3d(topRadius*cosAngle, height, topRadius*sinAngle);
+   }
+   glEnd();
+}
 
 // Draws a complete Basketball Hoop object with a solid backboard
 // have backboard depth to be more realistic and not have the light
@@ -1807,24 +1845,24 @@ static void basketballHoop(double x, double y, double z, double s, double rot, d
    const double invScale     = (s != 0.0) ? 1.0 / s : 0.0;
 
    // Real-world target dimensions (feet) so that it is to scale
-   const double boardWidthFeet      = 6.0;
-   const double boardHeightFeet     = 3.5;
-   const double boardThicknessFeet  = 0.167;   // ~2 inches
-   const double rimRadiusFeet       = 0.75;    // 18 in diameter
-   const double rimTubeFeet         = 0.0625;  // ~0.75 in bar thickness
-   const double rimHeightFeet       = 10.0;
-   const double boardBottomFeet     = rimHeightFeet - 0.9; // bottom of backboard
-   const double poleRadiusFeet      = 0.25;    // 6 in diameter support pole
-   const double poleHeightFeet      = 10.2;
-   const double bracketLengthFeet   = 2.0;     // extension arm from pole to board
+   const double boardWidthFeet = 6.0;
+   const double boardHeightFeet = 3.5;
+   const double boardThicknessFeet = 0.167;   // ~2 inches
+   const double rimRadiusFeet = 0.75;    // 18 in diameter
+   const double rimTubeFeet = 0.0625;  // ~0.75 in bar thickness
+   const double rimHeightFeet = 10.0;
+   const double boardBottomFeet = rimHeightFeet - 0.9; // bottom of backboard
+   const double poleRadiusFeet = 0.25;    // 6 in diameter support pole
+   const double poleHeightFeet = 10.2;
+   const double bracketLengthFeet = 2.0;     // extension arm from pole to board
 
-   const double bbThick  = (boardThicknessFeet * unitsPerFoot) * invScale;
-   const double bbWidth  = (boardWidthFeet     * unitsPerFoot) * invScale;
-   const double bbHeight = (boardHeightFeet    * unitsPerFoot) * invScale;
+   const double bbThick = (boardThicknessFeet * unitsPerFoot) * invScale;
+   const double bbWidth = (boardWidthFeet * unitsPerFoot) * invScale;
+   const double bbHeight = (boardHeightFeet * unitsPerFoot) * invScale;
 
    const double rimMajor = (rimRadiusFeet * unitsPerFoot) * invScale;
-   const double rimMinor = (rimTubeFeet   * unitsPerFoot) * invScale;
-   const double rimY     = (rimHeightFeet * unitsPerFoot) * invScale;
+   const double rimMinor = (rimTubeFeet * unitsPerFoot) * invScale;
+   const double rimY = (rimHeightFeet * unitsPerFoot) * invScale;
 
    // Pole textured metalllic cylinder
    const double poleRadius = (poleRadiusFeet * unitsPerFoot) * invScale;
@@ -1932,7 +1970,42 @@ static void basketballHoop(double x, double y, double z, double s, double rot, d
    drawTorus(rimMajor, rimMinor, 64, 24); // smoother & thinner
 
    glPopMatrix();
-   glPopMatrix(); // end hoop assembly
+  
+   // Drwing net to the hoop
+   const double netTopRadius = rimMajor * 0.97; // Barely inside the rim
+   const double netBottomRadius = netTopRadius * 0.65; // Narrow at the bottom of the rim
+   const double netHeightFeet = 1.2;
+   const double netHeight = (netHeightFeet*unitsPerFoot) * invScale;
+   
+   glPushMatrix();
+
+   // Position centered under the rim
+   glTranslated(0, rimY, rimZ);
+
+   // Cone extends downward (-y)
+   glScaled(1.0,-1.0,1.0); // height goes downwards
+
+   // Place net just below the rim
+   glTranslated(0.0, 0.02, 0.0); 
+
+   // Enabling blenmding since 32-bit bmp transparency works
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+   // Now applying texture
+   glEnable(GL_TEXTURE_2D);
+   glBindTexture(GL_TEXTURE_2D, texBasketballNet);
+
+   glColor3f(0.8f,0.8f,0.8f);
+   drawBasketballHoopNet(netTopRadius, netBottomRadius, netHeight, 24);
+
+   glDisable(GL_TEXTURE_2D);
+   glDisable(GL_BLEND);
+
+   glPopMatrix();
+
+   // End hoop assembly
+   glPopMatrix();
 }
 
 
@@ -2597,6 +2670,188 @@ static void drawArenaBowlAndCrowd(double courtLenHalfX, double courtWidHalfZ, do
    drawBleacherFanPlanes(courtLenHalfX, courtWidHalfZ, baseY, offCourtFeet, secondRowOffsetFeet);
 }
 
+// SCORE BOARD FUNCTIONS
+static void drawScoreboardFace()
+{
+   // Dimensions of the scoreboard 
+   const double width = 8.0;
+   const double height = 4.0;
+   const double depth = 0.0;
+
+   // Scaling dim to draw board around local origin
+   double hw = width/2;
+   double hh = height/2;
+   double hd = depth/2;
+
+   // Enabling lighting for the socreboard
+   glEnable(GL_LIGHTING);
+   glEnable(GL_TEXTURE_2D);
+   glColor3f(0.15f, 0.15f, 0.15f);
+
+   // Front main face... simple quads
+   glBegin(GL_QUADS);
+   glNormal3f(0,0,1);
+
+   glVertex3d(-hw, -hh, hd);
+   glVertex3d(hw, -hh, hd);
+   glVertex3d(hw, hh, hd);
+   glVertex3d(-hw, hh, hd);
+   glEnd();
+
+   // Draw the screen as a textured quad (front pane)
+   const double screenMargin = 0.25;
+   const double scoreHeight = 0.8;
+
+   // Score region of board
+   double scoreBottom = -hh + screenMargin;
+   double scoreTop = scoreBottom + scoreHeight;
+   double scoreMiddle = 0.5 * (scoreBottom + scoreTop) - 0.5; // shift down 
+
+   // Video region of board
+   double videoBottom = scoreTop;
+   double videoTop = hh - screenMargin;
+
+   // Screen dimensions
+   double sw = width - 2.0*screenMargin;
+   double sx0 = -sw/2;
+   double sx1 = sw/2;
+
+   double sy0 = videoBottom;
+   double sy1 = videoTop;
+
+   // VIDEO SCREEN SECTION
+   if(texVideoFrames[currentVideoFrame]) 
+   {
+      glBindTexture(GL_TEXTURE_2D, texVideoFrames[currentVideoFrame]);
+
+      // no lighitng on screen so the "video" looks fine
+      // white color to not bleed into video 
+      glDisable(GL_LIGHTING);
+      glColor3f(1.0f, 1.0f, 1.0f);
+
+      glBegin(GL_QUADS);
+      glTexCoord2f(0,0); glVertex3d(sx0, sy0, hd+0.01);
+      glTexCoord2f(1,0); glVertex3d(sx1, sy0, hd+0.01);
+      glTexCoord2f(1,1); glVertex3d(sx1, sy1, hd+0.01);
+      glTexCoord2f(0,1); glVertex3d(sx0, sy1, hd+0.01);
+      glEnd();
+
+      glDisable(GL_TEXTURE_2D);
+      glEnable(GL_LIGHTING);
+   }
+
+   // Score section of the video board
+   // String that stores the score 
+   char scoreStr[32];
+   snprintf(scoreStr, sizeof(scoreStr), "Away %d - %d Home", scoreHome, scoreAway);
+
+   // Measure the width of the score so that centered on scoreboard
+   float textWidth = 0.0f;
+   for(char *p = scoreStr; *p; ++p)
+      textWidth += glutStrokeWidth(GLUT_STROKE_ROMAN, *p); // GLUT_STROKE_ROMAN draws the characters as line segments... by-passing glutBitMap
+   
+   if(textWidth > 0) // score to display
+   {
+      // use middle 60% of the screen
+      double targetWidth = sw * 0.8;
+      double textScale = targetWidth / textWidth;
+
+      glDisable(GL_LIGHTING);
+      glDisable(GL_TEXTURE_2D);
+      glColor3f(1.0f, 1.0f, 1.0f);
+
+      glPushMatrix();
+
+      // Centering height in score region
+      glTranslated(0.0, scoreMiddle, hd+0.02);
+      glScaled(textScale, textScale, textScale); // font units to universal units
+
+      // Centering width wise... close as possible since measured from first character
+      glTranslated(-textWidth*0.5, -0.0, 0.0);
+
+      for(char *p = scoreStr; *p; ++p)
+      {
+         glutStrokeCharacter(GLUT_STROKE_ROMAN, *p);
+      }
+
+      glPopMatrix();
+
+      glEnable(GL_TEXTURE_2D);
+      glEnable(GL_LIGHTING);
+   }
+}
+
+// Draw complete scoreboard cube
+static void drawCompleteScoreboard(double x, double y, double z) 
+{
+   // determing radius of scoreboard 
+   const double width = 8.0; // MUST MATCH drawScoreboardFace()
+   const double height = 4.0;
+   const double globalHeight = 7.5;
+   
+   const double radius = width/2;
+   const double topSbHeight = globalHeight + height/2;
+   const double bottomSbHeight = globalHeight - height/2;
+   
+   glPushMatrix();
+   glTranslated(x, y, z);
+
+   // Facing +z
+   glPushMatrix();
+   glTranslated(0.0, 0.0, radius);
+   drawScoreboardFace();
+   glPopMatrix();
+
+   // Facing -x
+   glPushMatrix();
+   glRotated(90, 0, 1, 0);
+   glTranslated(0.0, 0.0, radius);
+   drawScoreboardFace();
+   glPopMatrix();
+
+   // Facing -z
+   glPushMatrix();
+   glRotated(180, 0, 1, 0);
+   glTranslated(0.0, 0.0, radius);
+   drawScoreboardFace();
+   glPopMatrix();
+
+   // Facing +x
+   glPushMatrix();
+   glRotated(270, 0, 1, 0);
+   glTranslated(0.0, 0.0, radius);
+   drawScoreboardFace();
+   glPopMatrix();
+
+   glPopMatrix();
+
+   // TOP & BOTTOM CAPS ON SCOREBOARD 
+   glDisable(GL_LIGHTING);
+   glEnable(GL_TEXTURE_2D);
+   glColor3f(1.0f, 1.0f, 1.0f);
+
+   if(texChairCushion)
+   {
+      glBindTexture(GL_TEXTURE_2D, texChairCushion);
+
+      glBegin(GL_QUADS);
+      glNormal3f(0,1,0);
+      glTexCoord2f(1,0); glVertex3d(-radius, topSbHeight, -radius); 
+      glTexCoord2f(0,0); glVertex3d(radius, topSbHeight, -radius); 
+      glTexCoord2f(0,1); glVertex3d(radius, topSbHeight, radius); 
+      glTexCoord2f(1,1); glVertex3d(-radius, topSbHeight, radius);
+      glEnd();
+
+      glBegin(GL_QUADS);
+      glNormal3f(0, -1, 0);
+      glTexCoord2f(0,0); glVertex3d(-radius, bottomSbHeight,  radius);
+      glTexCoord2f(1,0); glVertex3d( radius, bottomSbHeight,  radius);
+      glTexCoord2f(1,1); glVertex3d( radius, bottomSbHeight, -radius);
+      glTexCoord2f(0,1); glVertex3d(-radius, bottomSbHeight, -radius);
+      glEnd();
+   }
+}
+
 // MASTER BASKETBALL COURT FUNCTION: Draws the entire basketball court scene.
 // Standard version drawing full court with lines
 static void drawCompleteBasketballCourt(double x, double y, double z, double scale)
@@ -2690,6 +2945,12 @@ static void drawCompleteBasketballCourt(double x, double y, double z, double sca
 
    drawGatoradeCooler(leftCoolerX1,  coolerHeight, coolerZ, 0.5);
    drawGatoradeCooler(leftCoolerX2,  coolerHeight, coolerZ, 0.5);
+
+   // Adding center-hung score board
+   double sbX = 0.0;
+   double sbY = 7.5;
+   double sbZ = 0.0;
+   drawCompleteScoreboard(sbX, sbY, sbZ);
 
    // Ball dribbling at center court 
    double ball_radius = 0.2;
@@ -3071,6 +3332,24 @@ void key(unsigned char ch,int x,int y)
    {
       specular += 5;
    }
+   else if (ch=='1')
+   {
+      if(scoreAway<199) scoreAway++;
+      else scoreAway=0;
+   }
+   else if (ch=='2')
+   {
+      if(scoreHome<199) scoreHome++;
+      else scoreHome=0;
+   }
+   else if(ch=='`'||ch=='~')
+   {
+      scoreAway=0; scoreHome=0;
+   }
+   else if(ch=='j'||ch=='J')
+   {
+      currentVideoFrame=(currentVideoFrame+1)%6;
+   }
 
    // Translate shininess power to actual OpenGL value
    shiny = shininess < 0 ? 0 : pow(2.0, shininess);
@@ -3233,6 +3512,18 @@ int main(int argc,char* argv[])
    texGatoradeLogo = LoadTexBMP("textures/gatoradeLogo.bmp");
    texCoolerLid = LoadTexBMP("textures/whiteGatoradeLogo.bmp");
    texChairCushion = LoadTexBMP("textures/cuChairLogo.bmp");
+
+
+   // Video board frames
+   texVideoFrames[0] = LoadTexBMP("textures/videoBoard/CSCI5229_VideoBoard1.bmp");
+   texVideoFrames[1] = LoadTexBMP("textures/videoBoard/CSCI5229_VideoBoard2.bmp");
+   texVideoFrames[2] = LoadTexBMP("textures/videoBoard/CSCI5229_VideoBoard3.bmp");
+   texVideoFrames[3] = LoadTexBMP("textures/videoBoard/CSCI5229_VideoBoard4.bmp");
+   texVideoFrames[4] = LoadTexBMP("textures/videoBoard/CSCI5229_VideoBoard5.bmp");
+   texVideoFrames[5] = LoadTexBMP("textures/videoBoard/CSCI5229_VideoBoard6.bmp");
+
+   // Loading net (32-bits)
+   texBasketballNet = LoadTexBMP32("textures/basketballNet.bmp");
 
 #ifdef USEGLEW
    //  Initialize GLEW

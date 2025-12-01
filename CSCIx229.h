@@ -50,6 +50,7 @@ void Print(const char* format , ...);
 void Fatal(const char* format , ...);
 #endif
 unsigned int LoadTexBMP(const char* file);
+unsigned int LoadTexBMP32(const char* file); // Loads bmp with alpha values 
 void ErrCheck(const char* where);
 int  LoadOBJ(const char* file);
 
