@@ -4,23 +4,27 @@ CSCI5229 Fall 2025
 How to run: make; ./final;
 
 Main Key bindings
- *  k          Toggle lighting modes (warm-up, game, de-bugging)
+ *  k          Toggle lighting modes (warm-up, game)
  *  v          Change display mode (Orthogonal, Perspective, First Person)
+ *  1/2        Shoot baskets at respective hoops
+ *  j          Progress video on the jumbotron
  *  arrows     Change view angle (orbital) or look direction (FP)
  *  w/d/a/s    Move forward/back/left/right (in FP mode)
  -- Standard key bindings 
  *  +/-        zoom-in/zoom-out
  *  mouse      Look around
  *  ESC        Exit
- -- Mainly for lighting de-bugging process as obviously still working
+ -- Lighting
  *  l          Toggles lighting on/off
- *  m          Toggles light movement
- *  z/Z        Decrease/increase ambient light
- *  x/X        Decrease/increase diffuse light
- *  c/C        Decrease/increase specular light
+ *  m          Toggles light movement - can pause moving lights if want to check out certain objects in light
 
-What remains to be done:
 
-First thing that remain to be added is nets to the hoops. I have been putting nets on the hoops off since I have been lazy about extending the BMP Loader to handle alpha values since I need the net to be transparent in spots. I feel better about this after seeing the seaweed implementation of this in class yesterday. I want to add tunnels to "locker rooms" at the court level with a texture of the home team waiting to come out. With this, in the warm-up mode, I want to have fog in the tunnels as if the team is about to come out. I need additionally polish off the scene as a whole with more textures (floors around the court, laptops at scorer's table, wall's in front of the bleachers). Last, I would like a center-hung scoreboard containing video screen / scores... would be cool to flip through a play on video board as if its a video playing.
+The state upon starting the project is the "warm-up" mode. The lights are moving for player introductions and ball racks are at the top of the key for warm-ups. Press 'k' to switch to "game mode". Just like at the CU Event Center the court is bright and the light falls off quick into the bleachers making the court seem as if glowing. Most arenas are uniformly lit so this is a unique attribute of the CUEC. Another special feature of the CU event center is the ceiling-hung hoops. The only other power 5 conference basketball arena to have such hoops in the NCAA is Cameron Indoor Stadium at Duke University; not bad company to be apart of. Such hoops are thanks to the age of the arena which leaves very little room on our baselines. I did my own take on the court details based on what textures I could find and make work. It was easiest to cleanly inegrate all of the details such as "COLORADO" word mark on the baselines, retro center logo and on-court mountains(using texture) using a white color scheme. Which maybe I think CU could consider if this project gets in front of the Athletic Directors eyes... maybe.
 
-I know adding in an animation of a shot being taken isn't too hard to implement so since I will be loading in the net, I want to animate the motion of a "swish" when the ball goes through the hoop how we saw the motion of the seaweed... differnt function obviously though that is the idea. This touch would be the "graduate project" touch to the project as I will not only be drawing just a scene but realistic action, leaving a nice complete package. 
+In either warm-up or game-mode the user can press '1' or '2' to shoot baskets at the away or home hoops. The score is tallied on the jumbotron in the middle (limit of 199 like retro arenas due to non-digital displays). As the ball passes through the net, the net moves backwards as a net in real life. Also last minute the swish sound effect was added in which is queued on the net moving. Additionally, I have simple "video board" functionality on the jumbotron that can be played by pressing or holding 'j'... also played on the laptops at the scorers table. The clip shown on hte project is KJ Simpson hitting a buzzer beater to beat the Florida Gators in the first round of the 2024 NCAA March Madness tournament.
+
+AI was used to get the macro BEZIER to map the motion of ball in drawCompleteBasketballCourt() fcn, the motion of the net (-asin(a)) in the idle() and the function playSwish() to make the system call to play the swish sound effect.
+
+I am most proud of my ability to capture all major unique details of the CU Event Center and piece them together to allow myself to not just draw "a scene" but an actual environmemt here on campus.
+
+

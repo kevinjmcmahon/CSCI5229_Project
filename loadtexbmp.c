@@ -1,5 +1,6 @@
 //  CSCIx229 library
 //  Willem A. (Vlakkies) Schreuder
+//  Kevin McMahon - LoadTexBMP32()
 #include "CSCIx229.h"
 
 //
@@ -137,7 +138,7 @@ unsigned int LoadTexBMP32(const char* file)
    if (dy<1 || dy>max) Fatal("%s image height %d out of range 1-%d\n",file,dy,max);
    if (nbp!=1)  Fatal("%s bit planes is not 1: %d\n",file,nbp);
    if (bpp!=32) Fatal("%s bits per pixel is not 32: %d\n",file,bpp); // updated for 32-bit
-   if (k!=0 && k!=3)    Fatal("%s compressed files not supported\n",file);
+   if (k!=3)    Fatal("%s compressed files not supported\n",file);
 #ifndef GL_VERSION_2_0
    //  OpenGL 2.0 lifts the restriction that texture size must be a power of two
    for (k=1;k<dx;k*=2);
