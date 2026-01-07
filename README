@@ -1,5 +1,8 @@
-Kevin McMahon - Project
+Kevin McMahon - Final Project
+
 CSCI5229 Fall 2025
+
+3D Graphic Scene of CU Event Center using C with OpenGL library.
 
 How to run: make; ./final;
 
